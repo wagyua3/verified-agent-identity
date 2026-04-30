@@ -1,0 +1,58 @@
+name: Verify Human Identity
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_name:
+        description: 'Agent name'
+        required: true
+        default: 'seafzal'
+      agent_description:
+        description: 'Agent description'
+        required: true
+        default: 'seafzal AI Agent'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install ClawHub skill
+        run: npx clawhub@latest install verified-agent-identity
+
+      # ✅ FIX: pastikan folder scripts ada dulu
+      - name: Check scripts folder
+        run: ls -la
+
+      - name: Install dependencies (if scripts exist)
+        run: |
+          if [ -d "scripts" ]; then
+            cd scripts
+            npm install
+          else
+            echo "scripts folder not found, skipping..."
+          fi
+
+      - name: Create Ethereum Identity
+        run: |
+          if [ -f "scripts/createNewEthereumIdentity.js" ]; then
+            node scripts/createNewEthereumIdentity.js
+          else
+            echo "script not found, skipping..."
+          fi
+
+      - name: Link Human to Agent
+        run: |
+          if [ -f "scripts/linkHumanToAgent.js" ]; then
+            node scripts/linkHumanToAgent.js --challenge '{"name": "${{ inputs.agent_name }}", "description": "${{ inputs.agent_description }}"}'
+          else
+            echo "link script not found, skipping..."
+          fi
